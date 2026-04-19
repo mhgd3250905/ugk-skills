@@ -1,62 +1,47 @@
-﻿---
+---
 name: ins-search-latest
-description: 仅在用户显式输入 `/ins-search-latest:关键词[:天数]` 时使用。不要自动触发，不要从自然语言问题中猜测触发。这个技能只负责在 Instagram 站内按关键词做定向查询，并筛选最近 N 天内的相关帖子直接返回给用户；主输出只保留时间、作者、标题、正文、点赞数、评论数和链接。
+description: 仅在用户显式输入 `/ins-search-latest:关键词[:天数]` 时使用。不要从自然语言问题中猜测触发。该技能只负责在 Instagram 站内按关键词查询，并筛选最近 N 天内的相关帖子。
 allowed-tools: Bash
 ---
 
 # ins-search-latest
 
-这是一个只允许显式触发的系统级技能。
-
-只在用户消息直接以下面格式开头时使用：
+这个技能只允许显式触发。只有当用户消息直接以下列格式开头时使用：
 
 - `/ins-search-latest:关键词`
 - `/ins-search-latest:关键词:天数`
 
-默认天数是 `30`，最大按 `90` 天执行。
+默认天数是 `30`，最大按 `90` 天执行。如果关键词为空或天数不是正整数，停止并返回正确用法。
 
-除了这两种格式，其他任何自然语言提问都不要自动触发本技能。
+## Browser Readiness
 
-## 职责边界
+开始前必须执行：
 
-这个技能只负责：
+```bash
+node /app/runtime/skills-user/web-access/scripts/check-deps.mjs
+```
 
-1. 解析显式命令中的关键词和时间范围
-2. 组装 Instagram 关键词搜索页 URL
-3. 复用已登录的宿主 Chrome 搜索 Instagram
-4. 从搜索候选入口和候选账号页收集帖子
-5. 进入帖子详情页提取最近 N 天内的相关结果
-6. 直接返回时间、作者、标题、正文、点赞数、评论数、链接
+可继续的条件：
 
-这个技能不负责：
+- `host-browser: ok`
+- `proxy: ready`
 
-- 自动触发
-- 扩写同义词包
-- 多平台汇总
-- 导出固定报告
-- 抓取热评
+在 Docker sidecar 模式下，`host-browser: ok` 表示 `WEB_ACCESS_BROWSER_PROVIDER=direct_cdp` 已经连到 Chrome sidecar。这个标签只是兼容旧脚本，不代表使用 Windows 宿主 IPC。
 
-## 输入格式
+如果检查失败，优先运行：
 
-从用户原文中解析：
+```bash
+npm run docker:chrome:check
+```
 
-- `keyword`: `/ins-search-latest:` 后面的关键词
-- `days`: 最后一段 `:天数`，如果没有则默认 `30`
+不要在 Docker sidecar 模式下引导用户启动 Windows host IPC bridge。
 
-示例：
-
-- `/ins-search-latest:Medtrum`
-- `/ins-search-latest:Touch Care:14`
-- `/ins-search-latest:移宇:30`
-
-如果关键词为空、天数不是正整数，停止并返回正确用法，不要猜。
-
-## 执行要求
+## Execution
 
 必须调用脚本：
 
 ```bash
-node "/home/node/.claude/skills/ins-search-latest/scripts/ins_search_latest.mjs" --keyword "<KEYWORD>" --days <DAYS>
+node "/app/runtime/skills-user/ins-search-latest/scripts/ins_search_latest.mjs" --keyword "<KEYWORD>" --days <DAYS>
 ```
 
 规则：
@@ -65,28 +50,13 @@ node "/home/node/.claude/skills/ins-search-latest/scripts/ins_search_latest.mjs"
 2. 天数必须传解析后的正整数
 3. 优先直接返回脚本输出，不要再加工成废话套话
 4. 主输出只保留时间、作者、标题、正文、点赞数、评论数、链接
-5. 不要再补热评，也不要把评论区内容混成正文
+5. 不要补热评，也不要把评论区内容混成正文
 
-## 查询与过滤原则
+脚本会打开 Instagram 搜索页，复用登录态，收集候选帖子详情，并按最近 N 天与相关性筛选。
 
-脚本会：
+## Output
 
-1. 打开 `https://www.instagram.com/explore/search/keyword/?q=<关键词编码>` 搜索页
-2. 复用同域页面里的 `/web/search/topsearch/?query=` 结果发现候选入口
-3. 从候选搜索页 / 账号页 / hashtag 页收集帖子链接
-4. 进入帖子详情页提取时间、作者、正文、点赞数、评论数
-5. 对结果做最近 N 天过滤
-6. 对结果做相关性筛选并按时间倒序返回
-
-注意：
-
-- Instagram 列表页时间并不稳定，所以时间过滤依赖帖子详情页
-- 结果主输出不包含热评
-- 如果帖子正文不含关键词，但作者名或链接明显命中关键词，也允许保留
-
-## 输出格式
-
-默认直接回复用户，结构如下：
+默认直接回复用户：
 
 ```text
 Instagram Latest 查询结果
@@ -107,25 +77,13 @@ Instagram Latest 查询结果
    链接：...
 ```
 
-如果没有结果：
+如果没有结果，不要编造，明确说明未检索到满足条件的结果。
 
-```text
-Instagram Latest 查询结果
-关键词：<keyword>
-时间范围：最近 <days> 天
-查询地址：<final_url>
-
-结果概览：未检索到最近 <days> 天内的相关结果
-结果列表：未检索到满足条件的结果。
-```
-
-## 错误做法
-
-以下行为视为错误：
+## Wrong Practices
 
 - 从自然语言问题自动触发本技能
 - 私自扩词或改写用户关键词
 - 把列表页时间当成绝对可靠来源
 - 把评论区内容混成正文
-- 重新加回热评抓取
 - 只返回“查到了/没查到”，不给正文和链接
+- 在 Docker sidecar 模式下引导用户启动 Windows host IPC bridge

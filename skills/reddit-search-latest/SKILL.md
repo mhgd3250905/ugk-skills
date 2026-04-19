@@ -54,7 +54,7 @@ description: 仅在用户显式输入 `/reddit-search-latest:关键词[:天数]`
 必须调用脚本：
 
 ```bash
-python3 "/home/node/.claude/skills/reddit-search-latest/scripts/reddit_search_latest.py" --keyword "<KEYWORD>" --days <DAYS>
+python3 "/app/runtime/skills-user/reddit-search-latest/scripts/reddit_search_latest.py" --keyword "<KEYWORD>" --days <DAYS>
 ```
 
 规则：

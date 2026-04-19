@@ -348,7 +348,7 @@ async function collectPostLinksFromSeed(targetId, seedUrl, maxPostsPerSeed, meta
 
 async function collectPostDetails(targetId, postUrl, matchedBy, meta) {
   await navigate(targetId, postUrl, meta);
-  await sleep(1800);
+  await sleep(3000);
   const raw = await evaluate(targetId, buildPostExtractionExpression(), meta);
   if (!raw || raw.redirectedToLogin) return null;
   return normalizeInstagramPost(
@@ -397,6 +397,9 @@ async function main() {
       query: args.keyword,
       taskKind: 'ins-search-latest',
     });
+
+    // 等待页面完全加载
+    await sleep(3500);
 
     const topsearchPayload = await fetchTopsearch(targetId, args.keyword, {
       stage: 'search-fetch',

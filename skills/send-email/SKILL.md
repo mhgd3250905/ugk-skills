@@ -21,19 +21,13 @@ allowed-tools: "Read, Write, Edit, Bash"
 先在 skill 根目录创建：
 
 ```text
-~/.claude/skills/send-email/config.json
-```
-
-如果直接在本仓库里使用，也可以放到：
-
-```text
-skills/send-email/config.json
+runtime/skills-user/send-email/config.json
 ```
 
 可直接复制模板：
 
 ```bash
-cp ~/.claude/skills/send-email/config.example.json ~/.claude/skills/send-email/config.json
+cp runtime/skills-user/send-email/config.example.json runtime/skills-user/send-email/config.json
 ```
 
 模板内容如下：
@@ -66,10 +60,10 @@ cp ~/.claude/skills/send-email/config.example.json ~/.claude/skills/send-email/c
 把这份报告发送到 xxx@qq.com
 ```
 
-### 方式二：命令行
+### 方式二：命令行（Node.js 版本，推荐）
 
 ```bash
-python3 ~/.claude/skills/send-email/scripts/email_sender.py \
+node runtime/skills-user/send-email/scripts/email_sender.mjs \
   -t "收件人@qq.com" \
   -s "邮件主题" \
   -b "邮件正文"
@@ -78,8 +72,19 @@ python3 ~/.claude/skills/send-email/scripts/email_sender.py \
 如果需要显式指定配置文件：
 
 ```bash
-python3 ~/.claude/skills/send-email/scripts/email_sender.py \
-  --config ~/.claude/skills/send-email/config.json \
+node runtime/skills-user/send-email/scripts/email_sender.mjs \
+  --config runtime/skills-user/send-email/config.json \
+  -t "收件人@qq.com" \
+  -s "邮件主题" \
+  -b "邮件正文"
+```
+
+### 方式三：命令行（Python 版本）
+
+如果环境有 Python：
+
+```bash
+python3 runtime/skills-user/send-email/scripts/email_sender.py \
   -t "收件人@qq.com" \
   -s "邮件主题" \
   -b "邮件正文"
@@ -102,7 +107,7 @@ python3 ~/.claude/skills/send-email/scripts/email_sender.py \
 ### 发送简单邮件
 
 ```bash
-python3 ~/.claude/skills/send-email/scripts/email_sender.py \
+node runtime/skills-user/send-email/scripts/email_sender.mjs \
   -t "recipient@example.com" \
   -s "测试邮件" \
   -b "这是测试内容"
@@ -111,7 +116,7 @@ python3 ~/.claude/skills/send-email/scripts/email_sender.py \
 ### 发送 HTML 邮件
 
 ```bash
-python3 ~/.claude/skills/send-email/scripts/email_sender.py \
+node runtime/skills-user/send-email/scripts/email_sender.mjs \
   -t "recipient@example.com" \
   -s "HTML 邮件" \
   -b "<h1>标题</h1><p>内容</p>" \
@@ -121,7 +126,7 @@ python3 ~/.claude/skills/send-email/scripts/email_sender.py \
 ### 发送带附件的邮件
 
 ```bash
-python3 ~/.claude/skills/send-email/scripts/email_sender.py \
+node runtime/skills-user/send-email/scripts/email_sender.mjs \
   -t "recipient@example.com" \
   -s "报告" \
   -b "请查收附件" \
